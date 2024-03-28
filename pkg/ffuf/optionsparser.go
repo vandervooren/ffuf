@@ -76,6 +76,7 @@ type InputOptions struct {
 	DirSearchCompat        bool     `json:"dirsearch_compat"`
 	Encoders               []string `json:"encoders"`
 	Extensions             string   `json:"extensions"`
+	ModifierScript         string   `json:"modifier_script"`
 	IgnoreWordlistComments bool     `json:"ignore_wordlist_comments"`
 	InputMode              string   `json:"input_mode"`
 	InputNum               int      `json:"input_num"`
@@ -512,6 +513,7 @@ func ConfigFromOptions(parseOpts *ConfigOptions, ctx context.Context, cancel con
 	conf.InputNum = parseOpts.Input.InputNum
 
 	conf.InputShell = parseOpts.Input.InputShell
+	conf.ModifierScript = parseOpts.Input.ModifierScript
 	conf.OutputFile = parseOpts.Output.OutputFile
 	conf.OutputDirectory = parseOpts.Output.OutputDirectory
 	conf.OutputSkipEmptyFile = parseOpts.Output.OutputSkipEmptyFile

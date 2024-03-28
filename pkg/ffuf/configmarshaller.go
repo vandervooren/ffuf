@@ -70,6 +70,7 @@ func (c *Config) ToOptions() ConfigOptions {
 			o.Input.Inputcommands = append(o.Input.Inputcommands, fmt.Sprintf("%s:%s", v.Value, v.Keyword))
 		}
 	}
+	o.Input.ModifierScript = c.ModifierScript
 	o.Input.Request = c.RequestFile
 	o.Input.RequestProto = c.RequestProto
 	o.Input.Wordlists = c.Wordlists

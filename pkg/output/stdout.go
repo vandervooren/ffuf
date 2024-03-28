@@ -110,6 +110,11 @@ func (s *Stdoutput) Banner() {
 		printOption([]byte("ReplayProxy"), []byte(s.config.ReplayProxyURL))
 	}
 
+	// Modifier script
+	if len(s.config.ModifierScript) > 0 {
+		printOption([]byte("Modifier script"), []byte(s.config.ModifierScript))
+	}
+
 	// Timeout
 	timeout := fmt.Sprintf("%d", s.config.Timeout)
 	printOption([]byte("Timeout"), []byte(timeout))

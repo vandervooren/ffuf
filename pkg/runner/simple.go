@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/ffuf/ffuf/v2/pkg/ffuf"
+	"github.com/ffuf/ffuf/v2/pkg/modifier"
 
 	"github.com/andybalholm/brotli"
 )
@@ -26,8 +27,9 @@ import (
 const MAX_DOWNLOAD_SIZE = 5242880
 
 type SimpleRunner struct {
-	config *ffuf.Config
-	client *http.Client
+	config   *ffuf.Config
+	client   *http.Client
+	modifier *modifier.GojaModifier
 }
 
 func NewSimpleRunner(conf *ffuf.Config, replay bool) ffuf.RunnerProvider {
@@ -79,6 +81,9 @@ func NewSimpleRunner(conf *ffuf.Config, replay bool) ffuf.RunnerProvider {
 	if conf.FollowRedirects {
 		simplerunner.client.CheckRedirect = nil
 	}
+
+	simplerunner.modifier = modifier.NewGojaModifier(conf)
+
 	return &simplerunner
 }
 
@@ -105,6 +110,9 @@ func (r *SimpleRunner) Execute(req *ffuf.Request) (ffuf.Response, error) {
 	var httpreq *http.Request
 	var err error
 	var rawreq []byte
+
+	r.modifier.Modify(req)
+
 	data := bytes.NewReader(req.Data)
 
 	var start time.Time
