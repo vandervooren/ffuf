@@ -1,25 +1,21 @@
 package modifier
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/dop251/goja"
+	"github.com/dop251/goja_nodejs/buffer"
 	"github.com/dop251/goja_nodejs/console"
 	"github.com/dop251/goja_nodejs/require"
+	"github.com/dop251/goja_nodejs/url"
 	"github.com/ffuf/ffuf/v2/pkg/ffuf"
 	"github.com/ffuf/ffuf/v2/pkg/modifier/crypto"
 )
 
-type GojaModifierInstance struct {
-	vm      *goja.Runtime
-	require *require.RequireModule
-	modify  func(req *ffuf.Request) int
-}
-
 type GojaModifier struct {
 	config   *ffuf.Config
 	registry *require.Registry
-	script   string
 	program  *goja.Program
 }
 
@@ -27,7 +23,7 @@ func NewGojaModifier(conf *ffuf.Config) *GojaModifier {
 	var modifier GojaModifier
 
 	modifier.config = conf
-	modifier.registry = new(require.Registry)
+	modifier.registry = require.NewRegistry(require.WithGlobalFolders("."), require.WithLoader(require.DefaultSourceLoader))
 
 	if conf.ModifierScript != "" {
 		script, err := os.ReadFile(conf.ModifierScript)
@@ -36,8 +32,7 @@ func NewGojaModifier(conf *ffuf.Config) *GojaModifier {
 			panic(err)
 		}
 
-		modifier.script = string(script)
-		modifier.program = goja.MustCompile("modifier", string(script), true)
+		modifier.program = goja.MustCompile("", string(script), true)
 	}
 
 	return &modifier
@@ -48,24 +43,29 @@ func (gm *GojaModifier) Modify(req *ffuf.Request) *ffuf.Request {
 		return req
 	}
 
-	var modifier GojaModifierInstance
+	vm := goja.New()
 
-	modifier.vm = goja.New()
+	gm.registry.Enable(vm)
 
-	modifier.require = gm.registry.Enable(modifier.vm)
+	buffer.Enable(vm)
+	console.Enable(vm)
+	url.Enable(vm)
 
-	console.Enable(modifier.vm)
-	crypto.Enable(modifier.vm)
+	crypto.Enable(vm)
 
-	modifier.vm.RunProgram(gm.program)
+	vm.RunProgram(gm.program)
 
-	err := modifier.vm.ExportTo(modifier.vm.Get("modify"), &modifier.modify)
+	modifyFunc, isSuccess := goja.AssertFunction(vm.Get("modify"))
+
+	if !isSuccess {
+		panic(fmt.Errorf("cannot find a symbol with name 'modify' or declared symbol is not a function"))
+	}
+
+	_, err := modifyFunc(goja.Undefined(), vm.ToValue(req))
 
 	if err != nil {
 		panic(err)
 	}
-
-	modifier.modify(req)
 
 	return req
 }
